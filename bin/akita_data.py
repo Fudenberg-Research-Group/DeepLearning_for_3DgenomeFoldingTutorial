@@ -381,7 +381,7 @@ def main():
     if options.restart and os.path.isfile(seqs_cov_file):
       print('Skipping existing %s' % seqs_cov_file, file=sys.stderr)
     else:
-      cmd = 'akita_data_read.py'
+      cmd = '/usr/local/envs/akita/bin/python3 bin/akita_data_read.py'
       cmd += ' --crop %d' % options.crop_bp
       cmd += ' -d %s' % options.diagonal_offset
       cmd += ' -k %d' % options.kernel_stddev
@@ -445,7 +445,7 @@ def main():
     while tfr_start <= fold_set_end:
       tfr_stem = '%s/%s-%d' % (tfr_dir, fold_set, tfr_i)
 
-      cmd = 'basenji_data_write.py'
+      cmd = '/usr/local/envs/akita/bin/python3 bin/basenji_data_write.py'
       cmd += ' -s %d' % tfr_start
       cmd += ' -e %d' % tfr_end
 
