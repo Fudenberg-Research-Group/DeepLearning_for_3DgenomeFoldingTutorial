@@ -1,0 +1,107 @@
+{
+    "train": {
+        "batch_size": 2,
+	"shuffle_buffer": 128,
+        "optimizer": "sgd",
+        "initial_learning_rate": 0.002,
+	"maximal_learning_rate": 0.04,
+	"final_learning_rate": 0.0003,
+        "momentum": 0.98,
+        "loss": "mse",
+        "train_epochs_min": 124,
+        "train_epochs_max": 124,
+	"train_epochs_cycle1": 56,
+        "patience": 50,
+        "global_clipnorm": 20
+    },
+    "model": {
+        "seq_length": 1310720,
+        "diagonal_offset": 2,
+    
+        "augment_rc": true,
+        "augment_shift": 11,
+
+        "activation": "relu",
+        "norm_type": "batch",
+        "bn_momentum": 0.9,
+	"l2_scale": 1.5e-5,
+
+        "trunk": [
+            {
+                "name": "conv_block",
+                "filters": 128,
+                "kernel_size": 15,
+                "pool_size": 2
+            },
+            {
+                "name": "conv_tower",
+                "filters_init": 128,
+                "filters_mult": 1.0,
+                "kernel_size": 5,
+                "pool_size": 2,
+                "repeat": 10
+            },
+            {
+                "name": "dilated_residual",
+                "filters": 64,
+                "rate_mult": 1.625,
+                "repeat": 11,
+                "dropout": 0.1
+            },
+            {
+                "name": "conv_block",
+                "filters": 80,
+                "kernel_size": 5,
+                "activation_end": "relu"
+            },
+            {
+                "name": "one_to_two",
+                "operation": "mean"
+            },
+            {
+                "name": "conv_block_2d",
+                "filters": 80,
+                "kernel_size": 3
+            },
+            {
+                "name": "symmetrize_2d"
+            },
+            {
+                "name": "dilated_residual_2d",
+                "filters": 40,
+                "kernel_size": 3,
+                "rate_mult": 1.75,
+                "repeat": 6,
+                "dropout": 0.1
+            },
+	    {
+		"name": "squeeze_excite",
+		"additive": true,
+		"bottleneck_ratio": 8
+	    },
+            {
+                "name": "cropping_2d",
+                "cropping": 64
+            },
+            {
+                "name": "upper_tri",
+                "diagonal_offset": 2
+            }
+        ],
+
+        "head_human": [
+            {
+                "name": "dense",
+                "units": 5,
+                "activation": "linear"
+            }
+        ],
+        "head_mouse": [
+            {
+                "name": "dense",
+                "units": 6,
+                "activation": "linear"
+            }
+        ]
+    }
+}
