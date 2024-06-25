@@ -1,0 +1,7 @@
+{
+    "seq_length": 1310720,
+    "pool_width": 2048,
+    "crop_bp": 131072,
+    "diagonal_offset": 2,
+    "target_length": 130305
+}
