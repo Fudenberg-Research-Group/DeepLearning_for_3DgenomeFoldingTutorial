@@ -1,0 +1,2 @@
+index	identifier	file	clip	sum_stat	description
+0	Dplus	/home1/yxiao977/sc1/akita_dinoflagellate/squares_train_test_mask/	1	sum	Dplus
