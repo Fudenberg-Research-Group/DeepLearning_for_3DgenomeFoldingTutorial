@@ -1,7 +1,6 @@
 import numpy as np
 import random
 
-
 def permute_seq_k(seq_1hot, k=2):
     """
     Permute a 1hot encoded sequence by k-mers.
@@ -64,6 +63,7 @@ def get_relative_window_coordinates(s, shift=0, seq_length=1310720):
     return relative_start, relative_end
 
 
+
 def expand_and_check_window(s, chrom_sizes_table, shift=0, seq_length=1310720):
     """
     Expands a genomic window to a specified sequence length and checks its validity against chromosome sizes.
@@ -108,7 +108,9 @@ def expand_and_check_window(s, chrom_sizes_table, shift=0, seq_length=1310720):
 
     # checking if a genomic prediction can be centered around the span
     chr_size = int(
-        chrom_sizes_table.loc[chrom_sizes_table["chrom"] == chrom, "size"].iloc[0]
+        chrom_sizes_table.loc[
+            chrom_sizes_table["chrom"] == chrom, "size"
+        ].iloc[0]
     )
 
     if up_start < 0 or down_end > chr_size:
@@ -171,6 +173,7 @@ def dna_1hot(seq, seq_len=None, n_uniform=False, n_sample=False):
                     seq_code[i, ni] = 1
 
     return seq_code
+
 
 
 def central_permutation_seqs_gen(
@@ -245,7 +248,6 @@ def central_permutation_seqs_gen(
         for sequence in list_1hot:
             yield sequence
 
-
 def ut_dense(preds_ut, diagonal_offset=2):
     """Construct symmetric dense prediction matrices from upper triangular vectors.
 
@@ -276,7 +278,9 @@ def ut_dense(preds_ut, diagonal_offset=2):
     assert len(ut_indexes[0]) == ut_len
 
     # assign to dense matrix
-    preds_dense = np.zeros(shape=(seq_len, seq_len, num_targets), dtype=preds_ut.dtype)
+    preds_dense = np.zeros(
+        shape=(seq_len, seq_len, num_targets), dtype=preds_ut.dtype
+    )
     preds_dense[ut_indexes] = preds_ut
 
     # symmetrize
