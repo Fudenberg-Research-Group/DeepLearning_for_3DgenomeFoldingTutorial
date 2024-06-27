@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import json
 from cooltools.lib.numutils import set_diag
-from basenji import dataset
+from basenji import dataset, seqnn
 
 def print_partial_model_summary(model, num_layers=5):
     """
@@ -343,7 +343,6 @@ def show_example_training_samples(data_dir):
     hic_diags =  data_stats['diagonal_offset']
     target_crop = data_stats['crop_bp'] // data_stats['pool_width']
     target_length1 = data_stats['seq_length'] // data_stats['pool_width']
-
     target_length1_cropped = target_length1 - 2*target_crop
 
     train_data = dataset.SeqDataset(data_dir, 'train', batch_size=8)
@@ -354,22 +353,73 @@ def show_example_training_samples(data_dir):
     train_target2 = train_targets[train_index+1:train_index+2,:,:]
     train_target3 = train_targets[train_index+2:train_index+3,:,:]
 
-
     # plot target 
     vmin=-2; vmax=2
     plt.subplot(131) 
     mat = from_upper_triu(train_target[:,:,0], target_length1_cropped, hic_diags)
     im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
     plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
+    plt.title('target1')
 
     plt.subplot(132) 
     mat = from_upper_triu(train_target2[:,:,0], target_length1_cropped, hic_diags)
     im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
     plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
+    plt.title('target2')
 
     plt.subplot(133) 
     mat = from_upper_triu(train_target3[:,:,0], target_length1_cropped, hic_diags)
     im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
     plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
+    plt.title('target3')
+
+    plt.tight_layout()
+
+def show_prediction_with_naive_model(data_dir, model_dir):
+    # read data parameters
+    data_stats_file = '%s/statistics.json' % data_dir
+    with open(data_stats_file) as data_stats_open:
+        data_stats = json.load(data_stats_open)
+    hic_diags =  data_stats['diagonal_offset']
+    target_crop = data_stats['crop_bp'] // data_stats['pool_width']
+    target_length1 = data_stats['seq_length'] // data_stats['pool_width']
+    target_length1_cropped = target_length1 - 2*target_crop
+
+    train_data = dataset.SeqDataset(data_dir, 'train', batch_size=8)
+    train_inputs, train_targets = train_data.numpy(return_inputs=True, return_outputs=True)
+
+    # specify model parameters json to have only two targets
+    params_file = model_dir+'params.json' # architecture
+    with open(params_file) as params_open:
+        params = json.load(params_open)
+        model_arch = params['model'] # Retrieve model's architecture from params.json
+
+    human_model = seqnn.SeqNN(model_arch)
+
+    pred_from_seq = human_model.model.predict(train_inputs[0:1,:,:])
+    pred_from_seq2 = human_model.model.predict(train_inputs[1:2,:,:])
+    pred_from_seq3 = human_model.model.predict(train_inputs[2:3,:,:])
+
+
+    vmin=-2; vmax=2
+
+    # plot pred
+    plt.subplot(131) 
+    mat = from_upper_triu(pred_from_seq[:,:,0], target_length1_cropped, hic_diags)
+    im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
+    plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
+    plt.title('pred1')
+
+    plt.subplot(132) 
+    mat = from_upper_triu(pred_from_seq2[:,:,0], target_length1_cropped, hic_diags)
+    im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
+    plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
+    plt.title('pred2')
+
+    plt.subplot(133) 
+    mat = from_upper_triu(pred_from_seq3[:,:,0], target_length1_cropped, hic_diags)
+    im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
+    plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
+    plt.title('pred3')
 
     plt.tight_layout()
