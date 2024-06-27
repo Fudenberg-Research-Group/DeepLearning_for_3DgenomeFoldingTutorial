@@ -1,5 +1,10 @@
 import numpy as np
 import random
+import pandas as pd
+from matplotlib import pyplot as plt
+import json
+from cooltools.lib.numutils import set_diag
+from basenji import dataset
 
 def print_partial_model_summary(model, num_layers=5):
     """
@@ -321,3 +326,50 @@ def ut_dense(preds_ut, diagonal_offset=2):
     preds_dense += np.transpose(preds_dense, axes=[1, 0, 2])
 
     return preds_dense
+
+def from_upper_triu(vector_repr, matrix_len, num_diags):
+        z = np.zeros((matrix_len,matrix_len))
+        triu_tup = np.triu_indices(matrix_len,num_diags)
+        z[triu_tup] = vector_repr
+        for i in range(-num_diags+1,num_diags):
+            set_diag(z, np.nan, i)
+        return z + z.T
+
+def show_example_training_samples(data_dir):
+    # read data parameters
+    data_stats_file = '%s/statistics.json' % data_dir
+    with open(data_stats_file) as data_stats_open:
+        data_stats = json.load(data_stats_open)
+    hic_diags =  data_stats['diagonal_offset']
+    target_crop = data_stats['crop_bp'] // data_stats['pool_width']
+    target_length1 = data_stats['seq_length'] // data_stats['pool_width']
+
+    target_length1_cropped = target_length1 - 2*target_crop
+
+    train_data = dataset.SeqDataset(data_dir, 'train', batch_size=8)
+
+    train_index = 0
+    train_inputs, train_targets = train_data.numpy(return_inputs=True, return_outputs=True)
+    train_target = train_targets[train_index:train_index+1,:,:]
+    train_target2 = train_targets[train_index+1:train_index+2,:,:]
+    train_target3 = train_targets[train_index+2:train_index+3,:,:]
+
+
+    # plot target 
+    vmin=-2; vmax=2
+    plt.subplot(131) 
+    mat = from_upper_triu(train_target[:,:,0], target_length1_cropped, hic_diags)
+    im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
+    plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
+
+    plt.subplot(132) 
+    mat = from_upper_triu(train_target2[:,:,0], target_length1_cropped, hic_diags)
+    im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
+    plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
+
+    plt.subplot(133) 
+    mat = from_upper_triu(train_target3[:,:,0], target_length1_cropped, hic_diags)
+    im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
+    plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
+
+    plt.tight_layout()
