@@ -1,6 +1,44 @@
 import numpy as np
 import random
 
+def print_partial_model_summary(model, num_layers=5):
+    """
+    Print the summary of the first few layers of a Keras model.
+    
+    Parameters:
+    model (tf.keras.Model): The Keras model.
+    num_layers (int): The number of layers to include in the summary.
+    """
+    print(f"Model: {model.name}")
+    print("_" * 65)
+    print(f"Layer (type)                 Output Shape              Param # ")
+    print("=" * 65)
+    
+    total_params = 0
+    trainable_params = 0
+    non_trainable_params = 0
+    
+    for i, layer in enumerate(model.layers[:num_layers]):
+        output_shape = layer.output_shape
+        param_count = layer.count_params()
+        
+        total_params += param_count
+        if layer.trainable:
+            trainable_params += param_count
+        else:
+            non_trainable_params += param_count
+        
+        name = layer.name
+        class_name = layer.__class__.__name__
+        
+        print(f"{name:<25} ({class_name:<15}) {str(output_shape):<25} {param_count:<10,}")
+    
+    print("=" * 65)
+    print(f"Total params: {total_params:,}")
+    print(f"Trainable params: {trainable_params:,}")
+    print(f"Non-trainable params: {non_trainable_params:,}")
+    print("_" * 65)
+
 
 def permute_seq_k(seq_1hot, k=2):
     """
