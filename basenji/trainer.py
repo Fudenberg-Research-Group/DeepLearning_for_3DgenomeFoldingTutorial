@@ -76,7 +76,7 @@ class LivePlot(tf.keras.callbacks.Callback):
             self.history[metric].append(logs.get(metric))
         
         clear_output(wait=True)
-        plt.figure(figsize=(6, 18))  # Adjust figure size as needed
+        plt.figure(figsize=(18, 6))  # Adjust figure size as needed
 
         # Define subplots
         ax1 = plt.subplot(1, 3, 1)
