@@ -375,7 +375,7 @@ def show_example_training_samples(data_dir):
 
     plt.tight_layout()
 
-def show_prediction_with_naive_model(data_dir, model_dir):
+def show_prediction(data_dir, model_dir, restore_weights=False):
     # read data parameters
     data_stats_file = '%s/statistics.json' % data_dir
     with open(data_stats_file) as data_stats_open:
@@ -395,6 +395,11 @@ def show_prediction_with_naive_model(data_dir, model_dir):
         model_arch = params['model'] # Retrieve model's architecture from params.json
 
     human_model = seqnn.SeqNN(model_arch)
+
+    if restore_weights:
+        weights_file  = model_dir+'model_best.h5' # model_weights
+        human_model.restore(weights_file)
+
 
     pred_from_seq = human_model.model.predict(train_inputs[0:1,:,:])
     pred_from_seq2 = human_model.model.predict(train_inputs[1:2,:,:])
