@@ -76,12 +76,12 @@ class LivePlot(tf.keras.callbacks.Callback):
             self.history[metric].append(logs.get(metric))
         
         clear_output(wait=True)
-        plt.figure(figsize=(18, 12))  # Adjust figure size as needed
+        plt.figure(figsize=(6, 18))  # Adjust figure size as needed
 
         # Define subplots
-        ax1 = plt.subplot(3, 1, 1)
-        ax2 = plt.subplot(3, 1, 2)
-        ax3 = plt.subplot(3, 1, 3)
+        ax1 = plt.subplot(1, 3, 1)
+        ax2 = plt.subplot(1, 3, 2)
+        ax3 = plt.subplot(1, 3, 3)
 
         # Plotting Loss
         if 'loss' in self.history and 'val_loss' in self.history:
