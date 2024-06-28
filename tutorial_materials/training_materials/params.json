@@ -9,6 +9,7 @@
     "clip_norm": 10.0
   },
   "model": {
+    "verbose": true,
     "seq_length": 32768,
     "target_length": 64,
     "target_crop": 0,
