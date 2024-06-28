@@ -59,6 +59,34 @@ def parse_loss(loss_label, strategy=None, keras_fit=True, spec_weight=1, total_w
 
   return loss_fn
 
+####### Add a Live loss plot ###############
+import matplotlib.pyplot as plt
+from IPython.display import clear_output
+import numpy as np
+
+class LivePlot(tf.keras.callbacks.Callback):
+    def __init__(self, metrics=None):
+        super(LivePlot, self).__init__()
+        self.metrics = metrics or ['loss']
+        self.history = {metric: [] for metric in self.metrics}
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        for metric in self.metrics:
+            self.history[metric].append(logs.get(metric))
+        
+        clear_output(wait=True)
+        for metric in self.metrics:
+            plt.plot(self.history[metric], label=metric)
+        
+        plt.legend()
+        plt.xlabel('Epoch')
+        plt.ylabel('Value')
+        plt.title('Training Progress')
+        plt.grid(True)
+        plt.show()
+############################################
+
 class Trainer:
   def __init__(self, params, train_data, eval_data, out_dir,
                strategy=None, num_gpu=1, keras_fit=True):
@@ -134,7 +162,8 @@ class Trainer:
       early_stop,
       tf.keras.callbacks.TensorBoard(self.out_dir),
       tf.keras.callbacks.ModelCheckpoint('%s/model_check.h5'%self.out_dir),
-      save_best]
+      save_best,
+      LivePlot(metrics=['loss', 'val_loss'])]
 
     seqnn_model.model.fit(
       self.train_data[0].dataset,
