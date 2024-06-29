@@ -335,7 +335,7 @@ def from_upper_triu(vector_repr, matrix_len, num_diags):
             set_diag(z, np.nan, i)
         return z + z.T
 
-def show_example_training_samples(data_dir, split_label='train'):
+def show_targets(data_dir, split_label='train'):
     # read data parameters
     data_stats_file = '%s/statistics.json' % data_dir
     with open(data_stats_file) as data_stats_open:
