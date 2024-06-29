@@ -335,7 +335,7 @@ def from_upper_triu(vector_repr, matrix_len, num_diags):
             set_diag(z, np.nan, i)
         return z + z.T
 
-def show_example_training_samples(data_dir):
+def show_example_training_samples(data_dir, split_label='train'):
     # read data parameters
     data_stats_file = '%s/statistics.json' % data_dir
     with open(data_stats_file) as data_stats_open:
@@ -345,7 +345,7 @@ def show_example_training_samples(data_dir):
     target_length1 = data_stats['seq_length'] // data_stats['pool_width']
     target_length1_cropped = target_length1 - 2*target_crop
 
-    train_data = dataset.SeqDataset(data_dir, 'train', batch_size=8)
+    train_data = dataset.SeqDataset(data_dir, split_label, batch_size=8)
 
     train_index = 0
     train_inputs, train_targets = train_data.numpy(return_inputs=True, return_outputs=True)
@@ -375,7 +375,7 @@ def show_example_training_samples(data_dir):
 
     plt.tight_layout()
 
-def show_prediction(data_dir, model_dir, restore_weights=False):
+def show_prediction(data_dir, model_dir, restore_weights=False, split_label='train'):
     # read data parameters
     data_stats_file = '%s/statistics.json' % data_dir
     with open(data_stats_file) as data_stats_open:
@@ -385,7 +385,7 @@ def show_prediction(data_dir, model_dir, restore_weights=False):
     target_length1 = data_stats['seq_length'] // data_stats['pool_width']
     target_length1_cropped = target_length1 - 2*target_crop
 
-    train_data = dataset.SeqDataset(data_dir, 'train', batch_size=8)
+    train_data = dataset.SeqDataset(data_dir, split_label, batch_size=8)
     train_inputs, train_targets = train_data.numpy(return_inputs=True, return_outputs=True)
 
     # specify model parameters json to have only two targets
