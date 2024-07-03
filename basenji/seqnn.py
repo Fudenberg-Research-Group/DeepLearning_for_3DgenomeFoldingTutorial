@@ -41,7 +41,7 @@ class SeqNN():
     self.augment_rc = False
     self.augment_shift = [0]
     self.strand_pair = []
-    self.verbose = True
+    self.verbose = False
 
   def build_block(self, current, block_params):
     """Construct a SeqNN block.

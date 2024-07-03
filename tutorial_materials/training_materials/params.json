@@ -5,10 +5,11 @@
     "learning_rate": 0.0065,
     "momentum": 0.99575,
     "loss": "mse",
-    "patience": 12,
+    "patience": 8,
     "clip_norm": 10.0
   },
   "model": {
+    "verbose": false,
     "seq_length": 32768,
     "target_length": 64,
     "target_crop": 0,

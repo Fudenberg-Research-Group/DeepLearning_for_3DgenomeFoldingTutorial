@@ -59,6 +59,67 @@ def parse_loss(loss_label, strategy=None, keras_fit=True, spec_weight=1, total_w
 
   return loss_fn
 
+####### Add a Live loss plot ###############
+import matplotlib.pyplot as plt
+from IPython.display import clear_output
+import numpy as np
+
+class LivePlot(tf.keras.callbacks.Callback):
+    def __init__(self, metrics=None):
+        super(LivePlot, self).__init__()
+        self.metrics = metrics or ['loss', 'val_loss', 'pearsonr', 'r2']
+        self.history = {metric: [] for metric in self.metrics}
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        for metric in self.metrics:
+            self.history[metric].append(logs.get(metric))
+        
+        clear_output(wait=True)
+        plt.figure(figsize=(18, 6))  # Adjust figure size as needed
+
+        # Define subplots
+        ax1 = plt.subplot(1, 3, 1)
+        ax2 = plt.subplot(1, 3, 2)
+        ax3 = plt.subplot(1, 3, 3)
+
+        # Plotting Loss
+        if 'loss' in self.history and 'val_loss' in self.history:
+            ax1.plot(self.history['loss'], label='Training Loss', marker='o')
+            ax1.plot(self.history['val_loss'], label='Validation Loss', marker='o')
+            ax1.set_title('Loss')
+            ax1.set_xlabel('Epoch')
+            ax1.set_ylabel('Loss')
+            ax1.legend()
+            ax1.grid(True)
+            ax1.set_xticks(range(0, max(len(self.history['loss']), 10)))
+
+        # Plotting Pearsonr
+        if 'pearsonr' in self.history and 'val_pearsonr' in self.history:
+            ax2.plot(self.history['pearsonr'], label='Training Pearsonr', marker='o')
+            ax2.plot(self.history['val_pearsonr'], label='Validation Pearsonr', marker='o')
+            ax2.set_title('Pearsonr')
+            ax2.set_xlabel('Epoch')
+            ax2.set_ylabel('Pearsonr')
+            ax2.legend()
+            ax2.grid(True)
+            ax2.set_xticks(range(0, max(len(self.history['pearsonr']), 10)))
+
+        # Plotting R2
+        if 'r2' in self.history and 'val_r2' in self.history:
+            ax3.plot(self.history['r2'], label='Training R2', marker='o')
+            ax3.plot(self.history['val_r2'], label='Validation R2', marker='o')
+            ax3.set_title('R2')
+            ax3.set_xlabel('Epoch')
+            ax3.set_ylabel('R2')
+            ax3.legend()
+            ax3.grid(True)
+            ax3.set_xticks(range(0, max(len(self.history['r2']), 10)))
+
+        plt.tight_layout()
+        plt.show()
+############################################
+
 class Trainer:
   def __init__(self, params, train_data, eval_data, out_dir,
                strategy=None, num_gpu=1, keras_fit=True):
@@ -134,7 +195,8 @@ class Trainer:
       early_stop,
       tf.keras.callbacks.TensorBoard(self.out_dir),
       tf.keras.callbacks.ModelCheckpoint('%s/model_check.h5'%self.out_dir),
-      save_best]
+      save_best,
+      LivePlot(metrics=['loss', 'val_loss', 'pearsonr', 'val_pearsonr', 'r2', 'val_r2'])]
 
     seqnn_model.model.fit(
       self.train_data[0].dataset,
