@@ -41,13 +41,13 @@ def main():
     triu_tup = np.triu_indices(seq_bins, diagonal_offset)
 
     for split_label in split_labels:
-        seqs_per_tfr = 32 #batch size
+        seqs_per_tfr = 8 #batch size
         if split_label == 'train': 
-            num_seqs = 32 * 50
+            num_seqs = 8 * 50
         if split_label == 'valid': 
-            num_seqs = 32 * 10     
+            num_seqs = 8 * 10     
         if split_label == 'test': 
-            num_seqs = 32 * 10      
+            num_seqs = 8 * 10      
         num_tfr = num_seqs // seqs_per_tfr
 
         ### define motif 
