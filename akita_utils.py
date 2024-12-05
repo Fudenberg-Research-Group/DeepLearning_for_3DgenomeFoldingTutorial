@@ -3,8 +3,46 @@ import random
 import pandas as pd
 from matplotlib import pyplot as plt
 import json
-from cooltools.lib.numutils import set_diag
 from basenji import dataset, seqnn
+
+def set_diag(arr, x, i=0, copy=False):
+    """
+    copy from cooltools
+    Rewrite the i-th diagonal of a matrix with a value or an array of values.
+    Supports 2D arrays, square or rectangular. In-place by default.
+
+    Parameters
+    ----------
+    arr : 2-D array
+        Array whose diagonal is to be filled.
+    x : scalar or 1-D vector of correct length
+        Values to be written on the diagonal.
+    i : int, optional
+        Which diagonal to write to. Default is 0.
+        Main diagonal is 0; upper diagonals are positive and
+        lower diagonals are negative.
+    copy : bool, optional
+        Return a copy. Diagonal is written in-place if false.
+        Default is False.
+
+    Returns
+    -------
+    Array with diagonal filled.
+
+    Notes
+    -----
+    Similar to numpy.fill_diagonal, but allows for kth diagonals as well.
+    This solution was borrowed from
+    http://stackoverflow.com/questions/9958577/changing-the-values-of-the-diagonal-of-a-matrix-in-numpy
+
+    """
+    if copy:
+        arr = arr.copy()
+    start = max(i, -arr.shape[1] * i)
+    stop = max(0, (arr.shape[1] - i)) * arr.shape[1]
+    step = arr.shape[1] + 1
+    arr.flat[start:stop:step] = x
+    return arr
 
 def print_partial_model_summary(model, num_layers=5):
     """

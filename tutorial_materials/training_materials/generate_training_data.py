@@ -1,14 +1,12 @@
 #!/usr/bin/env python
-from optparse import OptionParser
+import argparse
 import os
 from tqdm import tqdm
 
 import numpy as np
-from scipy.stats import beta, zscore
 import tensorflow as tf
 
 from basenji.dna_io import dna_1hot
-from cooltools.lib.numutils import interp_nan
 
 np.random.seed(39)
 
@@ -22,32 +20,75 @@ Description...
 # main
 ################################################################################
 def main():
-    usage = 'usage: %prog [options] arg'
-    parser = OptionParser(usage)
-    #parser.add_option()
-    (options,args) = parser.parse_args()
+    parser = argparse.ArgumentParser(description="Generate synthetic training samples")
+    parser.add_argument(
+        "--seq_length", 
+        type=int, 
+        help="Length of the sequence (integer value)", 
+        default=8192 # 2^13
+    )
+    parser.add_argument(
+        "--bin_size", 
+        type=int, 
+        help="Size of the bin (integer value)", 
+        default=128
+    )
+    parser.add_argument(
+        "--diagonal_offset", 
+        type=int, 
+        help="Offset for diagonal indices (integer value)", 
+        default=2
+    )
+    parser.add_argument(
+        "--seqs_per_tfr", 
+        type=int, 
+        help="Number of sequences per TFR (integer value)", 
+        default=8 
+    )
+    parser.add_argument(
+    "--num_training_batch", 
+    type=int, 
+    help="Number of training batches (integer value)", 
+    default=30
+    )
+    parser.add_argument(
+        "--num_validation_batch", 
+        type=int, 
+        help="Number of validation batches (integer value)", 
+        default=10
+    )
+    parser.add_argument(
+        "--num_test_batch", 
+        type=int, 
+        help="Number of test batches (integer value)", 
+        default=10
+    )
+    args = parser.parse_args()
 
-    # out_dir = 'squares_valid'
+    seqs_per_tfr = args.seqs_per_tfr
+    num_training_batch = args.num_training_batch
+    num_validation_batch = args.num_validation_batch
+    num_test_batch = args.num_test_batch
+    seq_length = args.seq_length
+    bin_size = args.bin_size
+    diagonal_offset = args.diagonal_offset
+
     out_dir = '/content/akita_tutorial/tutorial_materials/training_materials/tfrecords'
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
 
-    seq_length = 32768 #2^15
-    bin_size = 512
     seq_bins = seq_length // bin_size
     split_labels = ['train', 'valid', 'test']
-    diagonal_offset = 2
 
     triu_tup = np.triu_indices(seq_bins, diagonal_offset)
 
     for split_label in split_labels:
-        seqs_per_tfr = 32 #batch size
         if split_label == 'train': 
-            num_seqs = 32 * 50
+            num_seqs = seqs_per_tfr * num_training_batch
         if split_label == 'valid': 
-            num_seqs = 32 * 10     
+            num_seqs = seqs_per_tfr * num_validation_batch     
         if split_label == 'test': 
-            num_seqs = 32 * 10      
+            num_seqs = seqs_per_tfr * num_test_batch      
         num_tfr = num_seqs // seqs_per_tfr
 
         ### define motif 
