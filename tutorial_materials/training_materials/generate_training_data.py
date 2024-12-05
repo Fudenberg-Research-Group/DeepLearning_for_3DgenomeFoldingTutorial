@@ -2,10 +2,10 @@
 import argparse
 import os
 from tqdm import tqdm
-
+import json
 import numpy as np
-import tensorflow as tf
 
+import tensorflow as tf
 from basenji.dna_io import dna_1hot
 
 np.random.seed(39)
@@ -65,13 +65,31 @@ def main():
     )
     args = parser.parse_args()
 
+    seq_length = args.seq_length
+    bin_size = args.bin_size
+    diagonal_offset = args.diagonal_offset
     seqs_per_tfr = args.seqs_per_tfr
     num_training_batch = args.num_training_batch
     num_validation_batch = args.num_validation_batch
     num_test_batch = args.num_test_batch
-    seq_length = args.seq_length
-    bin_size = args.bin_size
-    diagonal_offset = args.diagonal_offset
+
+    data = {
+        "num_targets": 1,
+        "seq_length": seq_length,
+        "seq_1hot": False,
+        "pool_width": bin_size,
+        "crop_bp": 0,
+        "diagonal_offset": diagonal_offset,
+        "target_length": ((seq_length/bin_size)**2 - seq_length/bin_size - 2*(seq_length/bin_size-1))/2, # length of the vector that represents upper triangular of hic map
+        "train_seqs": seqs_per_tfr * num_training_batch,
+        "valid_seqs": seqs_per_tfr * num_validation_batch,
+        "test_seqs": seqs_per_tfr * num_test_batch
+    }
+    statistics_path = "/content/akita_tutorial/tutorial_materials/training_materials/statistics.json"
+
+    with open(statistics_path, "w") as file:
+        json.dump(data, file)
+
 
     out_dir = '/content/akita_tutorial/tutorial_materials/training_materials/tfrecords'
     if not os.path.isdir(out_dir):
