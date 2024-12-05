@@ -6,7 +6,7 @@
     "crop_bp": 0,
     "diagonal_offset": 2,
     "target_length": 1953,
-    "train_seqs": 2560,
-    "valid_seqs": 640,
-    "test_seqs": 0
+    "train_seqs": 400,
+    "valid_seqs": 80,
+    "test_seqs": 80
 }

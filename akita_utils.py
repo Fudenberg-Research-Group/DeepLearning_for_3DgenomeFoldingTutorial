@@ -466,3 +466,183 @@ def show_prediction(data_dir, model_dir, restore_weights=False, split_label='tra
     plt.title('pred3')
 
     plt.tight_layout()
+
+
+def symmertic_insertion_seqs_gen(seq_coords_df, background_seqs, genome_open, nproc=1, map=map):
+    """
+    Generate sequences with symmetric insertions for a given set of coordinates.
+
+    This generator function takes a DataFrame `seq_coords_df` containing genomic
+    coordinates, a list of background sequences `background_seqs`, and a genome file
+    handler `genome_open`. It yields one-hot encoded DNA sequences with symmetric
+    insertions based on the specified coordinates.
+
+    Parameters:
+    - seq_coords_df (pandas.DataFrame): DataFrame with columns 'chrom', 'start', 'end',
+                                         'strand', 'flank_bp', 'spacer_bp', 'orientation'.
+                                         Represents genomic coordinates and insertion parameters.
+    - background_seqs (List[numpy.ndarray]): List of background sequences to be modified.
+    - genome_open (GenomeFileHandler): A file handler for the genome to fetch sequences.
+
+    Yields:
+    numpy.ndarray: One-hot encoded DNA sequence with symmetric insertions.
+    """
+    
+    for s in seq_coords_df.itertuples():
+
+        flank_bp = s.flank_bp
+        spacer_bp = s.spacer_bp
+        orientation_string = s.orientation
+
+        seq_1hot_insertion = dna_1hot(
+            genome_open.fetch(
+                s.chrom, s.start - flank_bp, s.end + flank_bp
+            ).upper()
+        )
+
+        if s.strand == "-":
+            seq_1hot_insertion = hot1_rc(seq_1hot_insertion)
+            # now, all motifs are standarized to this orientation ">"
+
+        seq_1hot = background_seqs[s.background_index].copy()
+
+        seq_1hot = _insert_casette(
+            seq_1hot, seq_1hot_insertion, spacer_bp, orientation_string
+        )
+
+        yield seq_1hot    
+
+
+def _insert_casette(
+    seq_1hot, seq_1hot_insertion, spacer_bp, orientation_string
+    ):
+    """
+    Insert a casette sequence into a given one-hot encoded DNA sequence.
+
+    This function takes a one-hot encoded DNA sequence `seq_1hot`, an insertion
+    sequence `seq_1hot_insertion`, the number of base pairs for intert-insert spacers
+    `spacer_bp`, and an orientation string `orientation_string` specifying the orientation
+    and number of insertions. It inserts the given casette sequence into the original sequence
+    based on the specified orientations and returns the modified sequence.
+
+    Parameters:
+    - seq_1hot (numpy.ndarray): One-hot encoded DNA sequence to be modified.
+    - seq_1hot_insertion (numpy.ndarray): One-hot encoded DNA sequence to be inserted.
+    - spacer_bp (int): Number of base pairs for intert-insert spacers.
+    - orientation_string (str): String specifying the orientation and number of insertions.
+                               '>' denotes forward orientation, and '<' denotes reverse.
+
+    Returns:
+    numpy.ndarray: One-hot encoded DNA sequence with the casette insertion.
+
+    Raises:
+    AssertionError: If the insertion offset is outside the valid range or if the length
+                    of the insert and inter-insert spacing leads to an invalid offset.
+    """
+    seq_length = seq_1hot.shape[0]
+    insert_bp = len(seq_1hot_insertion)
+    num_inserts = len(orientation_string)
+
+    insert_plus_spacer_bp = insert_bp + 2 * spacer_bp
+    multi_insert_bp = num_inserts * insert_plus_spacer_bp
+    insert_start_bp = seq_length // 2 - multi_insert_bp // 2
+
+    output_seq = seq_1hot.copy()
+    insertion_starting_positions = []
+    for i in range(num_inserts):
+        offset = insert_start_bp + i * insert_plus_spacer_bp + spacer_bp
+        insertion_starting_positions.append(offset)
+
+        assert (
+            offset >= 0 and offset < seq_length - insert_bp
+        ), f"offset = {offset}. Please, check length of insert and inter-insert spacing."
+
+        for orientation_arrow in orientation_string[i]:
+            if orientation_arrow == ">":
+                output_seq[offset : offset + insert_bp] = seq_1hot_insertion
+            else:
+                output_seq[offset : offset + insert_bp] = hot1_rc(
+                    seq_1hot_insertion
+                )
+
+    return output_seq
+
+
+def dna_1hot(seq, seq_len=None, n_uniform=False, n_sample=False):
+    """dna_1hot
+    Args:
+      seq:       nucleotide sequence.
+      seq_len:   length to extend/trim sequences to.
+      n_uniform: represent N's as 0.25, forcing float16,
+      n_sample:  sample ACGT for N
+    Returns:
+      seq_code: length by nucleotides array representation.
+    """
+    if seq_len is None:
+        seq_len = len(seq)
+        seq_start = 0
+    else:
+        if seq_len <= len(seq):
+            # trim the sequence
+            seq_trim = (len(seq) - seq_len) // 2
+            seq = seq[seq_trim : seq_trim + seq_len]
+            seq_start = 0
+        else:
+            seq_start = (seq_len - len(seq)) // 2
+
+    seq = seq.upper()
+
+    # map nt's to a matrix len(seq)x4 of 0's and 1's.
+    if n_uniform:
+        seq_code = np.zeros((seq_len, 4), dtype="float16")
+    else:
+        seq_code = np.zeros((seq_len, 4), dtype="bool")
+
+    for i in range(seq_len):
+        if i >= seq_start and i - seq_start < len(seq):
+            nt = seq[i - seq_start]
+            if nt == "A":
+                seq_code[i, 0] = 1
+            elif nt == "C":
+                seq_code[i, 1] = 1
+            elif nt == "G":
+                seq_code[i, 2] = 1
+            elif nt == "T":
+                seq_code[i, 3] = 1
+            else:
+                if n_uniform:
+                    seq_code[i, :] = 0.25
+                elif n_sample:
+                    ni = random.randint(0, 3)
+                    seq_code[i, ni] = 1
+
+    return seq_code
+
+
+def hot1_rc(seqs_1hot):
+    """Reverse complement a batch of one hot coded sequences,
+    while being robust to additional tracks beyond the four
+    nucleotides."""
+
+    if seqs_1hot.ndim == 2:
+        singleton = True
+        seqs_1hot = np.expand_dims(seqs_1hot, axis=0)
+    else:
+        singleton = False
+
+    seqs_1hot_rc = seqs_1hot.copy()
+
+    # reverse
+    seqs_1hot_rc = seqs_1hot_rc[:, ::-1, :]
+
+    # swap A and T
+    seqs_1hot_rc[:, :, [0, 3]] = seqs_1hot_rc[:, :, [3, 0]]
+
+    # swap C and G
+    seqs_1hot_rc[:, :, [1, 2]] = seqs_1hot_rc[:, :, [2, 1]]
+
+    if singleton:
+        seqs_1hot_rc = seqs_1hot_rc[0]
+
+    return seqs_1hot_rc
+
