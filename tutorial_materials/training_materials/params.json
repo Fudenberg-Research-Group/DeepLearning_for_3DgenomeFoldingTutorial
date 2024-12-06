@@ -10,7 +10,7 @@
   },
   "model": {
     "verbose": false,
-    "seq_length": 32768,
+    "seq_length": 8192,
     "target_length": 64,
     "target_crop": 0,
     "diagonal_offset": 2,
@@ -24,7 +24,7 @@
         "name": "conv_block",
         "filters": 96,
         "kernel_size": 11,
-        "pool_size": 8
+        "pool_size": 2
       },
       {
         "name": "conv_tower",

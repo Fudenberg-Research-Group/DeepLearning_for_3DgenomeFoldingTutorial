@@ -373,7 +373,7 @@ def from_upper_triu(vector_repr, matrix_len, num_diags):
             set_diag(z, np.nan, i)
         return z + z.T
 
-def show_targets(data_dir, split_label='train'):
+def get_data(data_dir, split_label='train'):
     # read data parameters
     data_stats_file = '%s/statistics.json' % data_dir
     with open(data_stats_file) as data_stats_open:
@@ -383,87 +383,41 @@ def show_targets(data_dir, split_label='train'):
     target_length1 = data_stats['seq_length'] // data_stats['pool_width']
     target_length1_cropped = target_length1 - 2*target_crop
 
-    train_data = dataset.SeqDataset(data_dir, split_label, batch_size=8)
+    data = dataset.SeqDataset(data_dir, split_label, batch_size=8)
+    inputs, targets = data.numpy(return_inputs=True, return_outputs=True)
 
-    train_index = 0
-    train_inputs, train_targets = train_data.numpy(return_inputs=True, return_outputs=True)
-    train_target = train_targets[train_index:train_index+1,:,:]
-    train_target2 = train_targets[train_index+1:train_index+2,:,:]
-    train_target3 = train_targets[train_index+2:train_index+3,:,:]
+    return inputs, targets, hic_diags, target_length1_cropped
+
+def show_targets(data_dir, split_label='train', sample_indices=[]):
+    inputs, targets, hic_diags, target_length1_cropped = get_data(data_dir, split_label)
 
     # plot target 
     vmin=-2; vmax=2
-    plt.subplot(131) 
-    mat = from_upper_triu(train_target[:,:,0], target_length1_cropped, hic_diags)
-    im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
-    plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
-    plt.title('target1')
 
-    plt.subplot(132) 
-    mat = from_upper_triu(train_target2[:,:,0], target_length1_cropped, hic_diags)
-    im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
-    plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
-    plt.title('target2')
+    num_plots = len(sample_indices)
+    num_rows = np.ceil(num_plots / 4).astype(int) 
 
-    plt.subplot(133) 
-    mat = from_upper_triu(train_target3[:,:,0], target_length1_cropped, hic_diags)
-    im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
-    plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
-    plt.title('target3')
+    for i, sample_index in enumerate(sample_indices):
+        plt.subplot(num_rows, 4, i+1)
+        mat = from_upper_triu(targets[sample_index:sample_index+1,:,:][:,:,0], target_length1_cropped, hic_diags)
+        im = plt.matshow(mat, fignum=False, cmap='RdBu_r', vmax=vmax, vmin=vmin)
+        plt.colorbar(im, fraction=.04, pad=0.05, ticks=[-2, -1, 0, 1, 2])
+        plt.title(f'target{sample_index+1}')
 
     plt.tight_layout()
 
-def show_prediction(data_dir, model_dir, restore_weights=False, split_label='train'):
-    # read data parameters
-    data_stats_file = '%s/statistics.json' % data_dir
-    with open(data_stats_file) as data_stats_open:
-        data_stats = json.load(data_stats_open)
-    hic_diags =  data_stats['diagonal_offset']
-    target_crop = data_stats['crop_bp'] // data_stats['pool_width']
-    target_length1 = data_stats['seq_length'] // data_stats['pool_width']
-    target_length1_cropped = target_length1 - 2*target_crop
-
-    train_data = dataset.SeqDataset(data_dir, split_label, batch_size=8)
-    train_inputs, train_targets = train_data.numpy(return_inputs=True, return_outputs=True)
-
-    # specify model parameters json to have only two targets
-    params_file = model_dir+'params.json' # architecture
-    with open(params_file) as params_open:
-        params = json.load(params_open)
-        model_arch = params['model'] # Retrieve model's architecture from params.json
-
-    human_model = seqnn.SeqNN(model_arch)
-
-    if restore_weights:
-        weights_file  = model_dir+'model_best.h5' # model_weights
-        human_model.restore(weights_file)
-
-
-    pred_from_seq = human_model.model.predict(train_inputs[0:1,:,:])
-    pred_from_seq2 = human_model.model.predict(train_inputs[1:2,:,:])
-    pred_from_seq3 = human_model.model.predict(train_inputs[2:3,:,:])
-
-
+def show_predictions(predictions, hic_diags, target_length1_cropped):
     vmin=-2; vmax=2
 
-    # plot pred
-    plt.subplot(131) 
-    mat = from_upper_triu(pred_from_seq[:,:,0], target_length1_cropped, hic_diags)
-    im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
-    plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
-    plt.title('pred1')
+    num_plots = len(predictions)
+    num_rows = np.ceil(num_plots / 4).astype(int) 
 
-    plt.subplot(132) 
-    mat = from_upper_triu(pred_from_seq2[:,:,0], target_length1_cropped, hic_diags)
-    im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
-    plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
-    plt.title('pred2')
-
-    plt.subplot(133) 
-    mat = from_upper_triu(pred_from_seq3[:,:,0], target_length1_cropped, hic_diags)
-    im = plt.matshow(mat, fignum=False, cmap= 'RdBu_r', vmax=vmax, vmin=vmin)
-    plt.colorbar(im, fraction=.04, pad = 0.05, ticks=[-2,-1, 0, 1,2]);
-    plt.title('pred3')
+    for i, pred in enumerate(predictions):
+        plt.subplot(num_rows, 4, i+1)
+        mat = from_upper_triu(pred[:,:,0], target_length1_cropped, hic_diags)
+        im = plt.matshow(mat, fignum=False, cmap='RdBu_r', vmax=vmax, vmin=vmin)
+        plt.colorbar(im, fraction=.04, pad=0.05, ticks=[-2, -1, 0, 1, 2])
+        plt.title(f'pred{i+1}')
 
     plt.tight_layout()
 

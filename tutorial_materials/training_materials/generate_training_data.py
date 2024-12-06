@@ -10,15 +10,7 @@ from basenji.dna_io import dna_1hot
 
 np.random.seed(39)
 
-'''
-Name
 
-Description...
-'''
-
-################################################################################
-# main
-################################################################################
 def main():
     parser = argparse.ArgumentParser(description="Generate synthetic training samples")
     parser.add_argument(
@@ -46,10 +38,10 @@ def main():
         default=8 
     )
     parser.add_argument(
-    "--num_training_batch", 
-    type=int, 
-    help="Number of training batches (integer value)", 
-    default=30
+        "--num_training_batch", 
+        type=int, 
+        help="Number of training batches (integer value)", 
+        default=30
     )
     parser.add_argument(
         "--num_validation_batch", 
@@ -63,38 +55,48 @@ def main():
         help="Number of test batches (integer value)", 
         default=10
     )
+    parser.add_argument(
+        "--boundary_range", 
+        type=tuple, 
+        help="Range of number of boundaries (tuple of two integers)", 
+        default=(4, 8)
+    )
+    
     args = parser.parse_args()
 
     seq_length = args.seq_length
     bin_size = args.bin_size
     diagonal_offset = args.diagonal_offset
+    boundary_range = args.boundary_range
     seqs_per_tfr = args.seqs_per_tfr
     num_training_batch = args.num_training_batch
     num_validation_batch = args.num_validation_batch
     num_test_batch = args.num_test_batch
 
-    data = {
+    sequence_stats = {
         "num_targets": 1,
         "seq_length": seq_length,
         "seq_1hot": False,
         "pool_width": bin_size,
         "crop_bp": 0,
         "diagonal_offset": diagonal_offset,
-        "target_length": ((seq_length/bin_size)**2 - seq_length/bin_size - 2*(seq_length/bin_size-1))/2, # length of the vector that represents upper triangular of hic map
+        "target_length": int(seq_length / bin_size), # length of the vector that represents upper triangular of hic map
         "train_seqs": seqs_per_tfr * num_training_batch,
         "valid_seqs": seqs_per_tfr * num_validation_batch,
         "test_seqs": seqs_per_tfr * num_test_batch
     }
     statistics_path = "/content/akita_tutorial/tutorial_materials/training_materials/statistics.json"
     with open(statistics_path, "w") as file:
-        json.dump(data, file)
+        json.dump(sequence_stats, file, indent=4)
 
-    with open('params.json', 'r') as file:
-        params = json.load(file)
-    params['model']['seq_length'] = seq_length
-    params['model']['target_length'] = seq_length / bin_size
-    with open('params.json', 'w') as file:
-        json.dump(params, file)
+    # params_path = '/content/akita_tutorial/tutorial_materials/training_materials/params.json'
+    # with open(params_path, 'r') as file:
+    #     params = json.load(file)
+    # params['model']['seq_length'] = seq_length
+    # params['model']['target_length'] = int(seq_length / bin_size)
+    # params['model']['trunk'][1]["repeat"] = int(np.log2(bin_size) - 1)
+    # with open(params_path, 'w') as file:
+    #     json.dump(params, file, indent=4)
 
 
     out_dir = '/content/akita_tutorial/tutorial_materials/training_materials/tfrecords'
@@ -116,11 +118,11 @@ def main():
         num_tfr = num_seqs // seqs_per_tfr
 
         ### define motif 
-        ctcf_consensus = ['C','C','G','C','G','A','G','G','T','G','G','C','A','G']
-        ctcf_revcomp   = ['C','T','G','C','C','A','C','C','T','C','G','C','G','G']
-        ctcf_consensus= np.array(ctcf_consensus)
-        ctcf_revcomp = np.array(ctcf_revcomp)
-        motif_len = len(ctcf_consensus)
+        motif_consensus = ['C','C','G','C','G','A','G','G','T','G','G','C','A','G']
+        motif_revcomp   = ['C','T','G','C','C','A','C','C','T','C','G','C','G','G']
+        motif_consensus= np.array(motif_consensus)
+        motif_revcomp = np.array(motif_revcomp)
+        motif_len = len(motif_consensus)
         spacer_len = 10
 
         # define options
@@ -133,17 +135,10 @@ def main():
 
                 for si in range(seqs_per_tfr):
 
-                    num_boundaries = np.random.randint(4,8)
+                    num_boundaries = np.random.randint(boundary_range[0], boundary_range[1])
                     boundary_positions = np.sort(np.random.choice(np.arange(
                                             motif_len +spacer_len//2 +1, seq_length -motif_len -spacer_len//2), num_boundaries,replace=False) )
                     boundary_positions = np.array( [0] + list(boundary_positions) + [seq_length])
-
-                    # create a random mask
-                    maskMatrix = np.ones((seq_bins,seq_bins))
-                    maskMatrix = maskMatrix.astype('float16')
-                    maskMatrix = maskMatrix[triu_tup].reshape((-1, 1))
-
-                    
 
                     targetMatrix = np.zeros((seq_bins,seq_bins))
                     for i in range(len(boundary_positions)-1):
@@ -156,9 +151,8 @@ def main():
                     
                     seq_dna = np.random.choice(['A','C','G','T'], size=seq_length, p= [.25,.25,.25,.25])
                     for i in range(1,len(boundary_positions)-1):
-                        seq_dna[boundary_positions[i]-motif_len - spacer_len//2:boundary_positions[i]- spacer_len//2 ]  = ctcf_consensus
-                        seq_dna[boundary_positions[i] + spacer_len//2: boundary_positions[i] + motif_len + spacer_len//2 ]  =ctcf_revcomp
-
+                        seq_dna[boundary_positions[i]-motif_len - spacer_len//2:boundary_positions[i]- spacer_len//2 ]  = motif_consensus
+                        seq_dna[boundary_positions[i] + spacer_len//2: boundary_positions[i] + motif_len + spacer_len//2 ]  =motif_revcomp
 
                     # collapse list
                     seq_dna = ''.join(seq_dna)
@@ -166,17 +160,14 @@ def main():
                     # 1 hot code
                     seq_1hot = dna_1hot(seq_dna)
 
-
                     # compute targets
                     seq_targets = targetMatrix.astype('float16')
                     seq_targets = seq_targets[triu_tup].reshape((-1, 1))
-
 
                     # make example
                     example = tf.train.Example(features=tf.train.Features(feature={
                     'sequence': _bytes_feature(seq_1hot.flatten().tostring()),
                     'target': _bytes_feature(seq_targets[:, :].flatten().tostring()),
-                    'mask': _bytes_feature(maskMatrix[:, :].flatten().tostring())
                     }))
 
                     # write example
@@ -185,8 +176,6 @@ def main():
 def _bytes_feature(value):
   return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-################################################################################
-# __main__
-################################################################################
+
 if __name__ == '__main__':
     main() 
