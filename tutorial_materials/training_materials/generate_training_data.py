@@ -86,9 +86,15 @@ def main():
         "test_seqs": seqs_per_tfr * num_test_batch
     }
     statistics_path = "/content/akita_tutorial/tutorial_materials/training_materials/statistics.json"
-
     with open(statistics_path, "w") as file:
         json.dump(data, file)
+
+    with open('params.json', 'r') as file:
+        params = json.load(file)
+    params['model']['seq_length'] = seq_length
+    params['model']['target_length'] = seq_length / bin_size
+    with open('params.json', 'w') as file:
+        json.dump(params, file)
 
 
     out_dir = '/content/akita_tutorial/tutorial_materials/training_materials/tfrecords'
