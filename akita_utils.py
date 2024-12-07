@@ -388,7 +388,7 @@ def get_data(data_dir, split_label='train'):
 
     return inputs, targets, hic_diags, target_length1_cropped
 
-def show_targets(data_dir, split_label='train', sample_indices=[]):
+def show_targets(data_dir, split_label='train', sample_indices=[0,1,2]):
     inputs, targets, hic_diags, target_length1_cropped = get_data(data_dir, split_label)
 
     # plot target 
@@ -403,6 +403,7 @@ def show_targets(data_dir, split_label='train', sample_indices=[]):
         im = plt.matshow(mat, fignum=False, cmap='RdBu_r', vmax=vmax, vmin=vmin)
         plt.colorbar(im, fraction=.04, pad=0.05, ticks=[-2, -1, 0, 1, 2])
         plt.title(f'target{sample_index+1}')
+        plt.xticks(rotation=90)
 
     plt.tight_layout()
 
@@ -418,6 +419,7 @@ def show_predictions(predictions, hic_diags, target_length1_cropped):
         im = plt.matshow(mat, fignum=False, cmap='RdBu_r', vmax=vmax, vmin=vmin)
         plt.colorbar(im, fraction=.04, pad=0.05, ticks=[-2, -1, 0, 1, 2])
         plt.title(f'pred{i+1}')
+        plt.xticks(rotation=90)
 
     plt.tight_layout()
 

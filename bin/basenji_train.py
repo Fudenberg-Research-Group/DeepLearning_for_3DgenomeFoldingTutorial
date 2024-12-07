@@ -87,6 +87,14 @@ def main():
   params_model = params['model']
   params_train = params['train']
 
+  # validator for checking consistency between params.json and statistics.json
+  with open(f'{data_dirs[0]}/statistics.txt') as stats_open:
+    sequence_stats = json.load(stats_open)
+  if params['model']['seq_length'] != sequence_stats["seq_length"]:
+    raise ValueError("Inconsistent sequence length between params.json and statistics.json.")
+  if params['model']['trunk'][1]["repeat"] != int(np.log2(sequence_stats["pool_width"]) - 1):
+    raise ValueError("Production of Maxpool layers in params.json does not match with pool_width in statistics.json.")
+
   # read datasets
   train_data = []
   eval_data = []

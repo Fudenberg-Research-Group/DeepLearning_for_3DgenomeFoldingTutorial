@@ -57,7 +57,8 @@ def main():
     )
     parser.add_argument(
         "--boundary_range", 
-        type=tuple, 
+        nargs="+",  # Accept multiple arguments
+        type=int,  
         help="Range of number of boundaries (tuple of two integers)", 
         default=(4, 8)
     )
@@ -80,7 +81,7 @@ def main():
         "pool_width": bin_size,
         "crop_bp": 0,
         "diagonal_offset": diagonal_offset,
-        "target_length": int(seq_length / bin_size), # length of the vector that represents upper triangular of hic map
+        "target_length": int(((seq_length/bin_size)**2 - seq_length/bin_size - 2*(seq_length/bin_size - 1))/2), # length of the vector that represents upper triangular of hic map
         "train_seqs": seqs_per_tfr * num_training_batch,
         "valid_seqs": seqs_per_tfr * num_validation_batch,
         "test_seqs": seqs_per_tfr * num_test_batch
@@ -134,7 +135,6 @@ def main():
             with tf.io.TFRecordWriter(tfr_file, tf_opts) as writer:
 
                 for si in range(seqs_per_tfr):
-
                     num_boundaries = np.random.randint(boundary_range[0], boundary_range[1])
                     boundary_positions = np.sort(np.random.choice(np.arange(
                                             motif_len +spacer_len//2 +1, seq_length -motif_len -spacer_len//2), num_boundaries,replace=False) )
