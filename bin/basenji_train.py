@@ -88,7 +88,7 @@ def main():
   params_train = params['train']
 
   # validator for checking consistency between params.json and statistics.json
-  with open(f'{data_dirs[0]}/statistics.txt') as stats_open:
+  with open(f'{data_dirs[0]}/statistics.json') as stats_open:
     sequence_stats = json.load(stats_open)
   if params['model']['seq_length'] != sequence_stats["seq_length"]:
     raise ValueError("Inconsistent sequence length between params.json and statistics.json.")
