@@ -430,7 +430,7 @@ def show_predictions(predictions, hic_diags, target_length1_cropped, plot_params
     fig = plt.figure(figsize=figsize)
     for i, pred in enumerate(predictions):
         ax = fig.add_subplot(num_rows, num_cols, i+1)
-        mat = from_upper_triu(pred[:, :, 0], target_length1_cropped, hic_diags)
+        mat = from_upper_triu(pred[:,0], target_length1_cropped, hic_diags)
         im = ax.matshow(mat, cmap='RdBu_r', vmax=vmax, vmin=vmin)
         fig.colorbar(im, ax=ax, fraction=0.04, pad=0.05)
         ax.set_title(f'pred{i+1}')
