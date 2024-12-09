@@ -388,38 +388,51 @@ def get_data(data_dir, split_label='train'):
 
     return inputs, targets, hic_diags, target_length1_cropped
 
-def show_targets(data_dir, split_label='train', sample_indices=[0,1,2], figsize=(9, 9)):
+def show_targets(data_dir, split_label='train', sample_indices=[0,1,2], plot_params={'figsize':(9, 9),
+                                                                                     'num_cols': 3,
+                                                                                     'vmin':-2,
+                                                                                     'vmax':2}):
     inputs, targets, hic_diags, target_length1_cropped = get_data(data_dir, split_label)
 
     # plot target 
-    vmin=-2; vmax=2
+    vmin = plot_params['vmin']
+    vmax = plot_params['vmax']
+    figsize = plot_params['figsize']
+    num_cols = plot_params['num_cols']
 
     num_plots = len(sample_indices)
-    num_rows = np.ceil(num_plots / 4).astype(int) 
+    num_rows = np.ceil(num_plots / num_cols).astype(int) 
 
     fig = plt.figure(figsize=figsize)
     for i, sample_index in enumerate(sample_indices):
-        ax = fig.add_subplot(num_rows, 3, i+1)
+        ax = fig.add_subplot(num_rows, num_cols, i+1)
         mat = from_upper_triu(targets[sample_index:sample_index+1,:,:][:,:,0], target_length1_cropped, hic_diags)
-        im = ax.matshow(mat, fignum=False, cmap='RdBu_r', vmax=vmax, vmin=vmin)
-        fig.colorbar(im, ax=ax, fraction=.04, pad=0.05, ticks=[-2, -1, 0, 1, 2])
-        ax.title(f'target{sample_index+1}')
+        im = ax.matshow(mat, cmap='RdBu_r', vmax=vmax, vmin=vmin)
+        fig.colorbar(im, ax=ax, fraction=.04, pad=0.05)
+        ax.set_title(f'target{sample_index+1}')
         ax.tick_params(axis='x', rotation=90)
 
     plt.tight_layout()
 
-def show_predictions(predictions, hic_diags, target_length1_cropped, figsize=(9, 9)):
-    vmin=-2; vmax=2
+def show_predictions(predictions, hic_diags, target_length1_cropped, plot_params={'figsize':(9, 9),
+                                                                                     'num_cols': 3,
+                                                                                     'vmin':-2,
+                                                                                     'vmax':2}):
+    # plot target 
+    vmin = plot_params['vmin']
+    vmax = plot_params['vmax']
+    figsize = plot_params['figsize']
+    num_cols = plot_params['num_cols']
 
     num_plots = len(predictions)
-    num_rows = np.ceil(num_plots / 4).astype(int) 
+    num_rows = np.ceil(num_plots / num_cols).astype(int) 
 
     fig = plt.figure(figsize=figsize)
     for i, pred in enumerate(predictions):
-        ax = fig.add_subplot(num_rows, 3, i+1)
+        ax = fig.add_subplot(num_rows, num_cols, i+1)
         mat = from_upper_triu(pred[:, :, 0], target_length1_cropped, hic_diags)
         im = ax.matshow(mat, cmap='RdBu_r', vmax=vmax, vmin=vmin)
-        fig.colorbar(im, ax=ax, fraction=0.04, pad=0.05, ticks=[-2, -1, 0, 1, 2])
+        fig.colorbar(im, ax=ax, fraction=0.04, pad=0.05)
         ax.set_title(f'pred{i+1}')
         ax.tick_params(axis='x', rotation=90)
 
