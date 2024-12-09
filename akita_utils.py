@@ -388,7 +388,7 @@ def get_data(data_dir, split_label='train'):
 
     return inputs, targets, hic_diags, target_length1_cropped
 
-def show_targets(data_dir, split_label='train', sample_indices=[0,1,2]):
+def show_targets(data_dir, split_label='train', sample_indices=[0,1,2], figsize=(9, 9)):
     inputs, targets, hic_diags, target_length1_cropped = get_data(data_dir, split_label)
 
     # plot target 
@@ -397,29 +397,31 @@ def show_targets(data_dir, split_label='train', sample_indices=[0,1,2]):
     num_plots = len(sample_indices)
     num_rows = np.ceil(num_plots / 4).astype(int) 
 
+    fig = plt.figure(figsize=figsize)
     for i, sample_index in enumerate(sample_indices):
-        plt.subplot(num_rows, 4, i+1)
+        ax = fig.add_subplot(num_rows, 3, i+1)
         mat = from_upper_triu(targets[sample_index:sample_index+1,:,:][:,:,0], target_length1_cropped, hic_diags)
-        im = plt.matshow(mat, fignum=False, cmap='RdBu_r', vmax=vmax, vmin=vmin)
-        plt.colorbar(im, fraction=.04, pad=0.05, ticks=[-2, -1, 0, 1, 2])
-        plt.title(f'target{sample_index+1}')
-        plt.xticks(rotation=90)
+        im = ax.matshow(mat, fignum=False, cmap='RdBu_r', vmax=vmax, vmin=vmin)
+        fig.colorbar(im, ax=ax, fraction=.04, pad=0.05, ticks=[-2, -1, 0, 1, 2])
+        ax.title(f'target{sample_index+1}')
+        ax.tick_params(axis='x', rotation=90)
 
     plt.tight_layout()
 
-def show_predictions(predictions, hic_diags, target_length1_cropped):
+def show_predictions(predictions, hic_diags, target_length1_cropped, figsize=(9, 9)):
     vmin=-2; vmax=2
 
     num_plots = len(predictions)
     num_rows = np.ceil(num_plots / 4).astype(int) 
 
+    fig = plt.figure(figsize=figsize)
     for i, pred in enumerate(predictions):
-        plt.subplot(num_rows, 4, i+1)
-        mat = from_upper_triu(pred[:,:,0], target_length1_cropped, hic_diags)
-        im = plt.matshow(mat, fignum=False, cmap='RdBu_r', vmax=vmax, vmin=vmin)
-        plt.colorbar(im, fraction=.04, pad=0.05, ticks=[-2, -1, 0, 1, 2])
-        plt.title(f'pred{i+1}')
-        plt.xticks(rotation=90)
+        ax = fig.add_subplot(num_rows, 3, i+1)
+        mat = from_upper_triu(pred[:, :, 0], target_length1_cropped, hic_diags)
+        im = ax.matshow(mat, cmap='RdBu_r', vmax=vmax, vmin=vmin)
+        fig.colorbar(im, ax=ax, fraction=0.04, pad=0.05, ticks=[-2, -1, 0, 1, 2])
+        ax.set_title(f'pred{i+1}')
+        ax.tick_params(axis='x', rotation=90)
 
     plt.tight_layout()
 
